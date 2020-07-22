@@ -1,0 +1,7 @@
+*.csv
+
+*.xml
+*.iml
+.idea/
+
+crawled_result/

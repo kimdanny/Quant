@@ -1,0 +1,1 @@
+from FinanceData import DataCollection
