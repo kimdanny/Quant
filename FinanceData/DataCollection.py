@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from FinanceDataReader import DataReader, StockListing
 
 
@@ -20,10 +21,12 @@ class DataCollection:
             self.from_ = dates[0]
             self.to = dates[1]
 
-    @staticmethod
-    def get_stock_list(market_code, columns_of_interest):
+    def get_stock_list(self, market_code, columns_of_interest=None):
         """
         Does not depend on Dates
+        <columns>
+         Symbol, Market, Name, Sector, Industry, ListingDate, SettleMonth, Representative, HomePage, Region
+
         :param market_code:
             KRX	            KRX 종목 전체
             KOSPI	        KOSPI 종목
@@ -36,11 +39,13 @@ class DataCollection:
             AMEX	        AMEX 종목
             S&P500	        S&P 500 종목
 
-        :param columnsOfInterest: List of colnames of interest  ex) ['Symbol', 'Name', 'ListingDate']
+        :param columnsOfInterest: List of colnames of interest  ex) ['Symbol', 'Name', 'Sector', 'ListingDate']
         :return: pd.DataFrame
         """
         market_stock_list = StockListing(market_code)
-        market_stock_list = market_stock_list[columns_of_interest]
+
+        if columns_of_interest is not None:
+            market_stock_list = market_stock_list[columns_of_interest]
 
         return market_stock_list
 
@@ -52,7 +57,8 @@ class DataCollection:
                         if company code is English Letter like 'AAPL' -->  US Stock
         :return: pd.DataFrame
         """
-        df = DataReader(company_code, self.from_, self.to) if self.to is not None else DataReader(company_code, self.from_)
+        df = DataReader(company_code, self.from_, self.to) if self.to is not None else DataReader(company_code,
+                                                                                                  self.from_)
         return df
 
     def get_index_by_market_data(self, index_code):
@@ -88,26 +94,75 @@ class DataCollection:
 
         return df
 
+    def find_sameSector_companies(self, stocklist, company_code):
+        """
+
+        :param stocklist: Market Stock list. Can get from self.get_stock_list()
+                         Must contain colnames 'Symbol' and 'Sector'
+        :param company_code: company code
+        :return: pd.DataFrame
+        """
+
+        assert ('Symbol' in stocklist.columns and 'Sector' in stocklist.columns)
+
+        company_sector = stocklist[stocklist['Symbol'] == company_code]['Sector'].values[0]
+        df = stocklist[stocklist['Sector'] == company_sector]
+
+        return df
+
+    def get_close_price_given_companies(self, companies_df):
+        """
+        Beware: Takes some time to return close_prices_df
+
+        <use cases>
+        Can get sameSector_df from self.find_sameSector_companies(), and then get close prices of all sameSector
+        companies by calling self.get_close_price_given_companies(sameSector_df)
+
+        :param companies_df: df of companies. Must contain colnames 'Symbol' and 'Name'
+        :return:  (pd.DataFrame) close prices
+        """
+        close_prices_df = pd.DataFrame()
+
+        for _, row in companies_df.iterrows():
+            code, name = row['Symbol'], row['Name']
+
+            df = DataReader(code, self.from_, self.to) if self.to is not None else DataReader(code, self.from_)
+
+            # Adding Close price to company name column
+            close_prices_df[name] = df['Close']
+        return close_prices_df
+
 
 # For Debugging and Testing purpose
-if __name__ == '__main__':
-    data_collection = DataCollection('2019-03', '2019-08')
-    stocklist = data_collection.get_stock_list('KOSPI', ['Symbol', 'Name', 'ListingDate'])
-    samsung_price = data_collection.get_company_price_data('005930')
-    apple_price = data_collection.get_company_price_data('AAPL')
-    kospi_index = data_collection.get_index_by_market_data('KS11')
-    currecny = data_collection.get_currency_exchange_data()
-
-    print(stocklist)
-    print("=" * 20)
-
-    print(samsung_price)
-    print("=" * 20)
-
-    print(apple_price)
-    print("=" * 20)
-
-    print(kospi_index)
-    print("=" * 20)
-
-    print(currecny)
+# if __name__ == '__main__':
+#     data_collection = DataCollection('2019-07')
+#     # stocklist = data_collection.get_stock_list('KOSPI', ['Symbol', 'Name', 'ListingDate'])
+#     stocklist = data_collection.get_stock_list('KOSPI', ['Symbol', 'Name', 'Sector'])
+#     samsung_sameSector_df = data_collection.find_sameSector_companies(stocklist=stocklist, company_code='005930')
+#     samsung_sameSector_comp_close = data_collection.get_close_price_given_companies(samsung_sameSector_df)
+#     # samsung_price = data_collection.get_company_price_data('005930')
+#     # apple_price = data_collection.get_company_price_data('AAPL')
+#     # kospi_index = data_collection.get_index_by_market_data('KS11')
+#     """
+#     <market index>
+#     Close, Open, High, Low,
+#     Volume: 거래량
+#     Change: 등락률(%)
+#     """
+#     # currecny = data_collection.get_currency_exchange_data()
+#
+#     # print(stocklist)
+#     # print("=" * 20)
+#
+#     # print(samsung_price)
+#     # print("=" * 20)
+#     #
+#     # print(apple_price)
+#     # print("=" * 20)
+#     #
+#     # print(kospi_index)
+#     # print("=" * 20)
+#     #
+#     # print(currecny)
+#
+#     print(samsung_sameSector_comp_close)

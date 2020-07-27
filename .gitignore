@@ -1,7 +1,16 @@
 *.csv
+*.json
 
 *.xml
 *.iml
 .idea/
+__pycache__/
 
 crawled_result/
+
+*.ipynb
+
+.DS_Store
+
+# For GCP Natural Language Credentials, and Saltlux api key
+config.py
