@@ -3,6 +3,7 @@ import requests
 import config
 from statistics import mean
 
+
 class Saltlux_Language:
     """
     Preferably for Korean Language
@@ -18,7 +19,8 @@ class Saltlux_Language:
 
     @staticmethod
     def read_json(filepath):
-        pass
+        with open(filepath, encoding='utf-8-sig') as f:
+            return json.load(f)
 
     def request_sentiment(self, text_content, lang='kor', dump=False):
         """
@@ -100,7 +102,6 @@ class Saltlux_Language:
         pass
 
 
-
 if __name__ == '__main__':
     saltlux = Saltlux_Language()
     content = "고가차를 많이 팔면된다현대차에 대한 투자의견 BUY와 목표주가 16만원(목표 P/B 0.6배)을 유지한다. 4분기실적은 예상보다 좋았던 ASP와 판매보증충당금비용의 감소에 힘입어 최근 낮아졌던 시장 기대치를 상회했다. 실적 자체보다 긍정적이었던 것은 판매가 감소했음에도 불구하고, 외형과수익성이 기대 이상이었다는 것이다. 믹스 개선과 인센티브 감소를 통해 덜 팔아도 외형/이익이 성장하는 방법이 작동한 것이다."
@@ -112,14 +113,9 @@ if __name__ == '__main__':
 
     print("="*20)
 
-    with open('./sentiment.json', encoding='utf-8-sig') as f:
-        sentiment_json = json.load(f)
-
-    with open('./keyword.json', encoding='utf-8-sig') as f:
-        keyword_json = json.load(f)
-
-    # print(keyword_json)
-
+    # READ JSON - not to use API calls every time --> Debugging purpose
+    sentiment_json = saltlux.read_json('./sentiment.json')
+    keyword_json = saltlux.read_json('./keyword.json')
 
 
     polarity, score, sentiwords =  saltlux.parse_sentiment_json(sentiment_json=sentiment_json)
