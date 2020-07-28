@@ -1,6 +1,6 @@
 from google.cloud import language_v1
 from google.cloud.language_v1 import enums
-import config
+from . import config
 
 
 class GCP_Language:
@@ -236,20 +236,20 @@ class GCP_Language:
         print(u"Language of the text: {}".format(response.language))
 
 
-if __name__ == '__main__':
-    gcp = GCP_Language()
-    content1 = "Samsung is fucking awesome. However, Google is very bad."
-    content2 = "문제는 비용 증가. 3Q19, 낮아진 기대감도 하회: 3Q19 실적은 매출액 26조 9,689원(+10%YoY, +0%QoQ), 영업이익 3,785억원(+31%YoY, -69%QoQ)으로 일회성 비용에 대한 우려로 낮아진 시장 컨센서스를 하회했음. 본업의 개선이 절실: 일회성 비용을 제외한 3Q18 및 3Q19에 영업이익은 각각 7,800억원과 1조 620억원임. 녹록치 않은 환경: 미국 등 주요 지역의 수요 부진이 지속되고 있는 가운데 경쟁사들의 SUV 신차 출시 확대로 경쟁 강도가 상승 중임. 투자의견을 HOLD로 유지함."
-    content3 = "삼성의 주가는 상승했다. 네이버의 주가는 하락했다. 다음의 주가는 하락세이다. 네이버의 주가는 상승하는 중이다."
-
-    print("="*20)
-    gcp.analyze_sentiment(text_content=content3)
-    print("="*20)
-
-    gcp.analyze_entities(text_content=content3)
-
-    print("=" * 20)
-    #gcp.analyze_sentiment("상승")
-    # gcp.analyz_entity_sentiment(text_content=content2)
-
-    gcp.analyze_syntax(text_content=content3)
+# if __name__ == '__main__':
+#     gcp = GCP_Language()
+#     content1 = "Samsung is fucking awesome. However, Google is very bad."
+#     content2 = "문제는 비용 증가. 3Q19, 낮아진 기대감도 하회: 3Q19 실적은 매출액 26조 9,689원(+10%YoY, +0%QoQ), 영업이익 3,785억원(+31%YoY, -69%QoQ)으로 일회성 비용에 대한 우려로 낮아진 시장 컨센서스를 하회했음. 본업의 개선이 절실: 일회성 비용을 제외한 3Q18 및 3Q19에 영업이익은 각각 7,800억원과 1조 620억원임. 녹록치 않은 환경: 미국 등 주요 지역의 수요 부진이 지속되고 있는 가운데 경쟁사들의 SUV 신차 출시 확대로 경쟁 강도가 상승 중임. 투자의견을 HOLD로 유지함."
+#     content3 = "삼성의 주가는 상승했다. 네이버의 주가는 하락했다. 다음의 주가는 하락세이다. 네이버의 주가는 상승하는 중이다."
+#
+#     print("="*20)
+#     gcp.analyze_sentiment(text_content=content3)
+#     print("="*20)
+#
+#     gcp.analyze_entities(text_content=content3)
+#
+#     print("=" * 20)
+#     #gcp.analyze_sentiment("상승")
+#     # gcp.analyz_entity_sentiment(text_content=content2)
+#
+#     gcp.analyze_syntax(text_content=content3)

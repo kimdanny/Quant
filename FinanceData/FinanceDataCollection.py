@@ -3,7 +3,7 @@ import pandas as pd
 from FinanceDataReader import DataReader, StockListing
 
 
-class DataCollection:
+class FinanceDataCollection:
     def __init__(self, *dates):
         """
         Set from, to dates

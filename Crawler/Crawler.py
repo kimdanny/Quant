@@ -1,4 +1,3 @@
-import sys
 from bs4 import BeautifulSoup
 import requests
 import re
@@ -6,8 +5,6 @@ import pandas as pd
 import os
 from pathlib import Path
 import numpy as np
-
-from FinanceData import DataCollection
 
 # TODO: crawl by dates range ex) crawl news from when to when
 # TODO: Use multiprocessing to speed up crawler
@@ -263,22 +260,22 @@ class Naver_Crawler:
         return result_df
 
 
-if __name__ == '__main__':
-    # 종목 코드로 기사 크롤링 --> 종목코드는 FinancialDataReader에서 받아온다.
-
-    # sample code --> { '005930': '삼성전자',
-    #                   '005380': '현대차',
-    #                   '015760': '한국전력',
-    #                   '005490': 'POSCO',
-    #                   '105560': 'KB금융'
-    #                   '95570' : 'AJ네트웍스'}
-
-    naver_crawler = Naver_Crawler('005380')
-    # news_df = naver_crawler.crawl_news(maxpage=2)
-    # print(sample_df)
-
-    # research = naver_crawler.crawl_research(2)
-    # print(research)
-
-    # discussion = naver_crawler.crawl_discussion(1)
-    # print(discussion)
+# if __name__ == '__main__':
+#     # 종목 코드로 기사 크롤링 --> 종목코드는 FinancialDataReader에서 받아온다.
+#
+#     # sample code --> { '005930': '삼성전자',
+#     #                   '005380': '현대차',
+#     #                   '015760': '한국전력',
+#     #                   '005490': 'POSCO',
+#     #                   '105560': 'KB금융'
+#     #                   '95570' : 'AJ네트웍스'}
+#
+#     naver_crawler = Naver_Crawler('005380')
+#     # news_df = naver_crawler.crawl_news(maxpage=2)
+#     # print(sample_df)
+#
+#     # research = naver_crawler.crawl_research(2)
+#     # print(research)
+#
+#     # discussion = naver_crawler.crawl_discussion(1)
+#     # print(discussion)
