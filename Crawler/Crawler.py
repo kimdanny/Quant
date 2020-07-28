@@ -23,9 +23,6 @@ class Naver_Crawler:
         base_dir = os.path.join(root_dir, "crawled_result")
         self.company_dir_path = os.path.join(base_dir, self.company_code)
 
-        d = DataCollection('2020-02')
-        print(d)
-
     def crawl_news(self, maxpage, page_to_csv=True, full_pages_to_csv=True):
         """
         Example URL:
