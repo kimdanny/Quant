@@ -6,11 +6,14 @@
 .idea/
 __pycache__/
 
-crawled_result/
-
 *.ipynb
 
 .DS_Store
+.DS_Store/
 
 # For GCP Natural Language Credentials, and Saltlux api key
 config.py
+
+# result files
+crawled_result/
+**/*_final_data

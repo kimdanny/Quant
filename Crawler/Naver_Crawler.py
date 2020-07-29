@@ -9,16 +9,21 @@ import numpy as np
 # TODO: crawl by dates range ex) crawl news from when to when
 # TODO: Use multiprocessing to speed up crawler
 
+
 class Naver_Crawler:
+    """
+    For Korean Stocks
+    """
 
     def __init__(self, company_code):
         self.base_url = 'https://finance.naver.com'
         self.company_code = company_code
         assert type(self.company_code) == str
         root_dir = os.path.dirname(__file__)
-        print(Path(__file__).resolve().parent.parent)
+        # print(Path(__file__).resolve().parent.parent)
         base_dir = os.path.join(root_dir, "crawled_result")
         self.company_dir_path = os.path.join(base_dir, self.company_code)
+        # print(self.company_dir_path)
 
     def crawl_news(self, maxpage, page_to_csv=True, full_pages_to_csv=True):
         """
