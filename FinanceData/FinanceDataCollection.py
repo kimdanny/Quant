@@ -21,7 +21,8 @@ class FinanceDataCollection:
             self.from_ = dates[0]
             self.to = dates[1]
 
-    def get_stock_list(self, market_code, columns_of_interest=None):
+    @staticmethod
+    def get_stock_info(market_code, columns_of_interest=None):
         """
         Does not depend on Dates
         <columns>
@@ -94,7 +95,8 @@ class FinanceDataCollection:
 
         return df
 
-    def find_sameSector_companies(self, stocklist, company_code):
+    @staticmethod
+    def find_sameSector_companies(stocklist, company_code):
         """
 
         :param stocklist: Market Stock list. Can get from self.get_stock_list()
@@ -107,6 +109,9 @@ class FinanceDataCollection:
 
         company_sector = stocklist[stocklist['Symbol'] == company_code]['Sector'].values[0]
         df = stocklist[stocklist['Sector'] == company_sector]
+        # dropping current company
+        drop_index = df.loc[df['Symbol'] == company_code].index
+        df = df.drop(drop_index)
 
         return df
 

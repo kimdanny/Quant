@@ -3,15 +3,19 @@ import os
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from pathlib import Path
+import pandas as pd
+import data_config
+# import multiprocessing
+# print(multiprocessing.cpu_count())  # --> 8
 
 # To import from parent Directories
 # print(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
-from NLP import GCP_Language
-from NLP import Saltlux_Language
+from NLP import GCP_Language, Saltlux_Language
 from FinanceData import FinanceDataCollection
 from Crawler import Naver_Crawler, Google_Crawler
+# should I make json or yaml config and read it??
 
 
 class CombineData:
@@ -29,12 +33,13 @@ class CombineData:
                     Will save final combined data as a CSV file in current directory.
         """
         self.company_code = company_code
-        # self.years = years
-        self.save_as_csv = save_as_csv
         self.from_ = (datetime.now() - relativedelta(years=years)).date().strftime('%Y-%m-%d')  # stringify datetime
 
         # PRIVATE variables
-        if include_language:
+        self._save_as_csv = save_as_csv
+        self._include_language = include_language
+
+        if self._include_language:
             if self.company_code.isdecimal():  # string contains only numbers --> Korean Stocks
                 print("=== Korean Stock ===")
                 self.naver_crawler = Naver_Crawler.Naver_Crawler(self.company_code)
@@ -51,7 +56,7 @@ class CombineData:
         self.finance_data = FinanceDataCollection.FinanceDataCollection(self.from_)
         print(f'FinanceDataCollection Class is set from date: {self.finance_data.from_}')
 
-        if self.save_as_csv:
+        if self._save_as_csv:
             # Path Handling
             dirname = self.company_code + '_final_data'
             root_dir = os.path.dirname(__file__)
@@ -59,8 +64,60 @@ class CombineData:
             Path(self.target_dir_path).mkdir(parents=True, exist_ok=True)
             self.file_name = 'from_' + self.from_ + '.csv'
 
+    # Private Method
+    # TODO: Multiprocessing
+    def combine_finance_data(self):
+        source = self.finance_data
+
+        # price_df --> Date, Open, High, Low, Close, Volume, Change
+        price_df = source.get_company_price_data(self.company_code)
+
+        # market_index_df --> Date, Open, High, Low, Close, Volume, Change
+        market_index_df = source.get_index_by_market_data('KS200')
+
+        """
+        stock_info --> Symbol, Market, Name, Sector, Industry, ListingDate, SettleMonth,
+                       Representative, Homepage, Region
+        same_sector_companies_df --> specified in columns of interest
+        same_sector_close_df --> Date, same sector companies
+        """
+        stock_info = source.get_stock_info('KOSPI', columns_of_interest=['Symbol', 'Sector', 'Name'])
+        same_sector_companies_df = source.find_sameSector_companies(stock_info, self.company_code)
+        same_sector_close_df = source.get_close_price_given_companies(same_sector_companies_df)
+
+        del stock_info, same_sector_companies_df
+
+        merged = pd.merge(price_df, market_index_df, on='Date').merge(same_sector_close_df, on='Date')
+
+        if self.company_code.isalpha():  # if US Stock, consider currency exchange rate
+            # currency_df --> Date, Open, High, Low, Close, Change
+            currency_df = source.get_currency_exchange_data()
+            merged = pd.merge(merged, currency_df, on='Date')
+
+        del source
+        return merged
+
+    def combine_language_data(self):
+        merged = None
+        return merged
+
     def combine(self):
-        pass
+
+        if self._include_language:
+            # TODO: combine finance and language
+            combined = None
+            pass
+        else:
+            # TODO: just call combine_finance_data()
+            combined = self.combine_finance_data()
+
+        if self._save_as_csv:
+            combined.to_csv(os.path.join(self.target_dir_path, self.file_name))
+
+        return combined
 
 
-combined = CombineData('005930', years=2)
+# combine_data = CombineData('005930', years=3)
+# combined_df = combine_data.combine()
+# print(combined_df)
+
