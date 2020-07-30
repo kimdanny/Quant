@@ -22,7 +22,7 @@ class FinanceDataCollection:
             self.to = dates[1]
 
     @staticmethod
-    def get_stock_info(market_code, columns_of_interest=None):
+    def get_stock_info(market_code: str, columns_of_interest=None):
         """
         Does not depend on Dates
         <columns>
@@ -50,7 +50,7 @@ class FinanceDataCollection:
 
         return market_stock_list
 
-    def get_company_price_data(self, company_code):
+    def get_company_price_data(self, company_code: str):
         """
         Stock price data
         :param company_code:
@@ -62,7 +62,7 @@ class FinanceDataCollection:
                                                                                                   self.from_)
         return df
 
-    def get_index_by_market_data(self, index_code):
+    def get_index_by_market_data(self, index_code: str):
         """
         Get market index history data
         :param index_code:  KS11	KOSPI 지수
@@ -96,7 +96,7 @@ class FinanceDataCollection:
         return df
 
     @staticmethod
-    def find_sameSector_companies(stocklist, company_code):
+    def find_sameSector_companies(stocklist, company_code: str):
         """
 
         :param stocklist: Market Stock list. Can get from self.get_stock_list()

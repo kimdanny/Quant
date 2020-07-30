@@ -19,7 +19,7 @@ from Crawler import Naver_Crawler, Google_Crawler
 
 
 class CombineData:
-    def __init__(self, company_code, years, include_language=False, save_as_csv=True):
+    def __init__(self, company_code: str, years: int, include_language=False, save_as_csv=True):
         """
 
         :param company_code: type==str

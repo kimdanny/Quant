@@ -22,7 +22,7 @@ class Saltlux_Language:
         with open(filepath, encoding='utf-8-sig') as f:
             return json.load(f)
 
-    def request_sentiment(self, text_content, dump=False, dump_id=0, lang='kor'):
+    def request_sentiment(self, text_content: str, dump=False, dump_id=0, lang='kor'):
         """
         :param text_content: content to be analyzed
         :param dump_id: unique id to distinguish sentiment.json file
@@ -114,7 +114,7 @@ class Saltlux_Language:
 
         return entities
 
-    def request_keywords(self, text_content, request_id=0, dump=False):
+    def request_keywords(self, text_content: str, request_id=0, dump=False):
         """
         Korean and English are both acceptable without language selection
 

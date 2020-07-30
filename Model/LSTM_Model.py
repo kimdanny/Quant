@@ -83,7 +83,7 @@ class LSTM_Model:
     def get_mape(y_true, y_pred):
         """
         Get Mean Absolute Percentage Error
-        :param y_true:
+        :param y_true: dfdd
         :param y_pred:
         :return: mape
         """

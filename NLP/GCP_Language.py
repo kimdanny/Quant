@@ -10,7 +10,7 @@ class GCP_Language:
     def __init__(self):
         self.credential_path = config.GCP_CREDENTIALS_PATH
 
-    def analyze_sentiment(self, text_content):
+    def analyze_sentiment(self, text_content: str):
         """
             Analyzing Sentiment in a String
 
@@ -53,7 +53,7 @@ class GCP_Language:
         # the automatically-detected language.
         print(u"Language of the text: {}".format(response.language))
 
-    def analyze_entities(self, text_content):
+    def analyze_entities(self, text_content: str):
         """
         Analyzing Entities in a String
 
@@ -112,7 +112,7 @@ class GCP_Language:
         # the automatically-detected language.
         print(u"Language of the text: {}".format(response.language))
 
-    def analyze_entity_sentiment(self, text_content):
+    def analyze_entity_sentiment(self, text_content: str):
         """
         !! [IMPORTANT] GCP does not support Korean for this functionality !!
 
@@ -172,7 +172,7 @@ class GCP_Language:
         # the automatically-detected language.
         print(u"Language of the text: {}".format(response.language))
 
-    def analyze_syntax(self, text_content):
+    def analyze_syntax(self, text_content: str):
         """
         Analyzing Syntax in a String
 

@@ -1,6 +1,3 @@
-# Made for Packages but ignore
-__init__.py
-
 # Interim Results
 *.csv
 *.json

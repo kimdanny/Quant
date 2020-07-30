@@ -15,17 +15,17 @@ class Naver_Crawler:
     For Korean Stocks
     """
 
-    def __init__(self, company_code):
+    def __init__(self, company_code: str):
         self.base_url = 'https://finance.naver.com'
         self.company_code = company_code
-        assert type(self.company_code) == str
+        # assert type(self.company_code) == str
         root_dir = os.path.dirname(__file__)
         # print(Path(__file__).resolve().parent.parent)
         base_dir = os.path.join(root_dir, "crawled_result")
         self.company_dir_path = os.path.join(base_dir, self.company_code)
         # print(self.company_dir_path)
 
-    def crawl_news(self, maxpage, page_to_csv=True, full_pages_to_csv=True):
+    def crawl_news(self, maxpage: int, page_to_csv=True, full_pages_to_csv=True):
         """
         Example URL:
             https://finance.naver.com/item/news.nhn?code=095570&page=2&sm=entity_id.basic
@@ -46,7 +46,7 @@ class Naver_Crawler:
         firstpage = page
         last_read_page = None
 
-        assert type(maxpage) == int
+        # assert type(maxpage) == int
 
         result_df = None
 
