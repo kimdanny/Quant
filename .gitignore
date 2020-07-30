@@ -1,13 +1,20 @@
+# Made for Packages but ignore
+__init__.py
+
+# Interim Results
 *.csv
 *.json
-
 *.xml
+
+# Annoying things
 *.iml
 .idea/
 __pycache__/
 
-*.ipynb
+# When doing EDA on IPython
+*.ipynb_checkpoints/
 
+# For macOS
 .DS_Store
 .DS_Store/
 
@@ -17,3 +24,11 @@ config.py
 # result files
 crawled_result/
 **/*_final_data
+
+# plots
+plots/
+*.png
+*.jpeg
+
+# Model checkpoints
+*.h5

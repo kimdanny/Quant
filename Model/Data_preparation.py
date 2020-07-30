@@ -65,8 +65,14 @@ class CombineData:
             self.file_name = 'from_' + self.from_ + '.csv'
 
     # Private Method
-    # TODO: Multiprocessing
-    def combine_finance_data(self):
+    # TODO: Multiprocessing?
+    def combine_finance_data(self, volume_change=True, moving_avg=True):
+        """
+
+        :param volume_change: (Derivative Column) Trading Volume change in Percentage
+        :param moving_avg:    (Derivative Column) Moving Average with window size 20 days
+        :return: combined data
+        """
         source = self.finance_data
 
         # price_df --> Date, Open, High, Low, Close, Volume, Change
@@ -95,13 +101,44 @@ class CombineData:
             merged = pd.merge(merged, currency_df, on='Date')
 
         del source
+
+        """Add new Columns: Derivatives"""
+        # 1. Volume Change of Stock trading and market trading
+        if volume_change:
+            i = 1
+            vol_change_x = [0]
+            vol_change_y = [0]
+
+            while i < len(merged):
+                try:
+                    vol_change_x.append((merged.iloc[i]['Volume_x'] - merged.iloc[i - 1]['Volume_x']) / merged.iloc[i]['Volume_x'])
+                except RuntimeWarning:
+                    vol_change_x.append(0.0)
+                try:
+                    vol_change_y.append((merged.iloc[i]['Volume_y'] - merged.iloc[i - 1]['Volume_y']) / merged.iloc[i]['Volume_y'])
+                except RuntimeWarning:
+                    vol_change_y.append(0.0)
+
+                i += 1
+
+            merged['vol_change_x'] = vol_change_x
+            print("Added derivative: vol_change_x")
+            merged['vol_change_y'] = vol_change_y
+            print("Added derivative: vol_change_y")
+
+        # 2. Adding Moving average
+        # Reference EDA.ipynb for details and plots
+        if moving_avg:
+            merged['Moving_av'] = merged['Close_x'].rolling(window=20, min_periods=0).mean()
+            print("Added derivative: Moving_avg")
+
         return merged
 
     def combine_language_data(self):
         merged = None
         return merged
 
-    def combine(self):
+    def combine(self, finance_volume_change=True, finance_moving_avg=True):
 
         if self._include_language:
             # TODO: combine finance and language
@@ -109,7 +146,7 @@ class CombineData:
             pass
         else:
             # TODO: just call combine_finance_data()
-            combined = self.combine_finance_data()
+            combined = self.combine_finance_data(volume_change=finance_volume_change, moving_avg=finance_moving_avg)
 
         if self._save_as_csv:
             combined.to_csv(os.path.join(self.target_dir_path, self.file_name))

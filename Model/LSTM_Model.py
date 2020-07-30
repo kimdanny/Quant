@@ -4,11 +4,12 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import time
-
 from datetime import date
+
 from matplotlib import pyplot as plt
 from numpy.random import seed
 from pylab import rcParams
+
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import StandardScaler
 
@@ -25,20 +26,21 @@ class LSTM_Model:
     def __init__(self, CombineDataObject=None, stk_path=None):
         if CombineDataObject is None:
             assert stk_path is not None
-            self.stk_path = stk_path
+            # self.stk_path = stk_path
+            self.data = self.load_data(stk_path=stk_path)
         else:
             self.data = CombineDataObject.combine()
 
-        self.test_size = 0.2  # proportion of dataset to be used as test set
-        self.cv_size = 0.2  # proportion of dataset to be used as cross-validation set
+        self.test_size = 0.2        # proportion of dataset to be used as test set
+        self.cv_size = 0.2          # proportion of dataset to be used as cross-validation set
 
-        self.N = 9  # for feature at day t, we use lags from t-1, t-2, ..., t-N as features.
+        self.N = 9                  # for feature at day t, we use lags from t-1, t-2, ..., t-N as features.
         # initial value before tuning
-        self.lstm_units = 50  # lstm param. initial value before tuning.
-        self.dropout_prob = 1  # lstm param. initial value before tuning.
-        self.optimizer = 'adam'  # lstm param. initial value before tuning.
-        self.epochs = 1  # lstm param. initial value before tuning.
-        self.batch_size = 1  # lstm param. initial value before tuning.
+        self.lstm_units = 50        # lstm param. initial value before tuning.
+        self.dropout_prob = 1       # lstm param. initial value before tuning.
+        self.optimizer = 'adam'     # lstm param. initial value before tuning.
+        self.epochs = 1             # lstm param. initial value before tuning.
+        self.batch_size = 1         # lstm param. initial value before tuning.
 
         self.model_seed = 100
 
@@ -46,12 +48,44 @@ class LSTM_Model:
         self.ticklabelsize = 14
 
     @staticmethod
+    def load_data(stk_path):
+        """
+        Use only if you load data from CSV
+        :param stk_path: CSV file path
+        :return: pd.DataFrame
+        """
+        df = pd.read_csv(stk_path, sep=',')
+        # Convert Date column to datetime
+        df.loc[:, 'Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d')
+
+        # Change all column headings to be lower case, and remove spacing
+        # TODO: What if colname is hngl?
+        df.columns = [str(x).lower().replace(' ', '_') for x in df.columns]
+
+        # Get month of each sample --> TODO: is this necessary?
+        df['month'] = df['date'].dt.month
+
+        # Sort by datetime
+        df = df.sort_values(by='date', ascending=True)
+
+        return df
+
+    def plot_close_price(self):
+        rcParams['figure.figsize'] = 10, 8  # width 10, height 8
+
+        ax = self.data.plot(x='date', y='close_x', style='b-', grid=True)
+        ax.set_xlabel("date")
+        ax.set_ylabel("price")
+        # TODO: path handling --> save in company code directory
+        plt.savefig('./close-prices.png')
+
+    @staticmethod
     def get_mape(y_true, y_pred):
         """
         Get Mean Absolute Percentage Error
         :param y_true:
         :param y_pred:
-        :return:
+        :return: mape
         """
         y_true, y_pred = np.array(y_true), np.array(y_pred)
         return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
@@ -160,5 +194,8 @@ class LSTM_Model:
         return rmse, mape, est
 
 
-combine_data = CombineData('005930', years=3)
-lstm = LSTM_Model(stk_path='./005930_final_data/from_2017-07-29.csv')
+if __name__  == '__main__':
+    combine_data = CombineData('005930', years=3)
+    csv_path = './005930_final_data/from_2017-07-30.csv'
+    lstm = LSTM_Model(stk_path=csv_path)
+    lstm.plot_close_price()
