@@ -5,6 +5,8 @@ import pandas as pd
 import seaborn as sns
 import time
 from datetime import date
+import os
+from pathlib import Path
 
 from matplotlib import pyplot as plt
 from numpy.random import seed
@@ -23,9 +25,11 @@ from Data_preparation import CombineData
 
 class LSTM_Model:
 
-    def __init__(self, CombineDataObject=None, stk_path=None):
-        if CombineDataObject is None:
-            assert stk_path is not None
+    def __init__(self, CombineDataObject: CombineData, stk_path=None):
+
+        self.company_code = CombineDataObject.company_code
+
+        if stk_path is not None:
             # self.stk_path = stk_path
             self.data = self.load_data(stk_path=stk_path)
         else:
@@ -46,6 +50,11 @@ class LSTM_Model:
 
         self.fontsize = 14
         self.ticklabelsize = 14
+
+        # Path Handling for plots
+        dirname = self.company_code + '_plots'
+        root_dir = os.path.dirname(__file__)
+        self.plots_dir_path = os.path.join(root_dir, dirname)
 
     @staticmethod
     def load_data(stk_path):
@@ -70,14 +79,20 @@ class LSTM_Model:
 
         return df
 
-    def plot_close_price(self):
-        rcParams['figure.figsize'] = 10, 8  # width 10, height 8
+    def plot_column_against_date(self, colname):
+        """
+        Not engaged in modelling. Just for plotting for EDA
+        """
+        rcParams['figure.figsize'] = 10, 5  # width 10, height 5
 
-        ax = self.data.plot(x='date', y='close_x', style='b-', grid=True)
+        ax = self.data.plot(x='date', y=colname, style='b-', grid=True)
         ax.set_xlabel("date")
         ax.set_ylabel("price")
-        # TODO: path handling --> save in company code directory
-        plt.savefig('./close-prices.png')
+
+        # path handling --> save in company code directory
+        Path(self.plots_dir_path).mkdir(parents=True, exist_ok=True)
+
+        plt.savefig(os.path.join(self.plots_dir_path, colname + '.png'))
 
     @staticmethod
     def get_mape(y_true, y_pred):
@@ -195,7 +210,7 @@ class LSTM_Model:
 
 
 if __name__  == '__main__':
-    combine_data = CombineData('005930', years=3)
+    combine_data_object = CombineData('005930', years=3)
     csv_path = './005930_final_data/from_2017-07-30.csv'
-    lstm = LSTM_Model(stk_path=csv_path)
-    lstm.plot_close_price()
+    lstm = LSTM_Model(CombineDataObject=combine_data_object, stk_path=csv_path)
+    lstm.plot_column_against_date(colname='close_x')

@@ -23,9 +23,8 @@ crawled_result/
 **/*_final_data
 
 # plots
-plots/
-*.png
-*.jpeg
+# **/*_plots
+# *.png
 
 # Model checkpoints
 *.h5
