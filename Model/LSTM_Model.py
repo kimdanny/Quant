@@ -19,7 +19,8 @@ from sklearn.preprocessing import StandardScaler
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, LSTM
 from keras.utils import plot_model
-
+import sys
+print(sys.path)
 from Data_preparation import CombineData
 
 

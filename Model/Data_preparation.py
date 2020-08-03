@@ -4,7 +4,6 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from pathlib import Path
 import pandas as pd
-import data_config
 # import multiprocessing
 # print(multiprocessing.cpu_count())  # --> 8
 
@@ -101,6 +100,10 @@ class CombineData:
             merged = pd.merge(merged, currency_df, on='Date')
 
         del source
+
+        # 액면분할시 생기는 0값들 있는 row drop
+        drop_index = merged[merged['Open_x'] == 0].index
+        merged = merged.drop(drop_index)
 
         """Add new Columns: Derivatives"""
         # 1. Volume Change of Stock trading and market trading

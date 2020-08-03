@@ -28,3 +28,5 @@ crawled_result/
 
 # Model checkpoints
 *.h5
+multivariate_LSTM_50units_1layer
+multivariate_LSTM_50units_1layer/
