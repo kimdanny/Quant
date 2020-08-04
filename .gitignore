@@ -29,3 +29,6 @@ crawled_result/
 # Model checkpoints
 *.h5
 model_checkpoints/
+
+# trial
+temp.py

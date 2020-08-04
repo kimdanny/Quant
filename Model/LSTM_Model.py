@@ -24,7 +24,7 @@ print(sys.path)
 from Data_preparation import CombineData
 
 
-class LSTM_Model:
+class UnivariateLSTM:
 
     def __init__(self, CombineDataObject: CombineData, stk_path=None):
 
@@ -213,5 +213,5 @@ class LSTM_Model:
 if __name__  == '__main__':
     combine_data_object = CombineData('005930', years=3)
     csv_path = './005930_final_data/from_2017-07-30.csv'
-    lstm = LSTM_Model(CombineDataObject=combine_data_object, stk_path=csv_path)
+    lstm = UnivariateLSTM(CombineDataObject=combine_data_object, stk_path=csv_path)
     lstm.plot_column_against_date(colname='close_x')
