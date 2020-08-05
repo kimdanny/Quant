@@ -157,7 +157,7 @@ class CombineData:
         return combined
 
 
-# combine_data = CombineData('005930', years=3)
-# combined_df = combine_data.combine()
-# print(combined_df)
+combine_data = CombineData('005930', years=3)
+combined_df = combine_data.combine()
+print(combined_df)
 

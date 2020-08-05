@@ -266,6 +266,7 @@ class MultivariateSupervisedLSTM:
         # rescaling
         values = values.reshape((values.shape[0], self.n_days * self.n_features))
         inv_yhat = concatenate((prediction, values[:, -(self.n_features - self.n_predict_features):]), axis=1)
+        print(prediction.shape, values[:, -(self.n_features - self.n_predict_features):].shape)
         inv_yhat = self.scaler.inverse_transform(inv_yhat)
         DataFrame(inv_yhat).to_csv('./temp.csv')
         inv_yhat = inv_yhat[:, :self.n_predict_features]
@@ -274,7 +275,7 @@ class MultivariateSupervisedLSTM:
 
 
 if __name__ == '__main__':
-    path = './005930_final_data/from_2017-08-03.csv'
+    path = './005930_final_data/from_2017-08-04.csv'
     lstm = MultivariateSupervisedLSTM(data_path=path)
     prediction = lstm.predict(load_saved_model=True)
     print(prediction)
