@@ -8,10 +8,8 @@ from pandas import DataFrame
 from pandas import concat
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, BatchNormalization
-from keras.layers import LSTM
-from keras.models import load_model
+from keras.models import Sequential, load_model
+from keras.layers import Dense, Dropout, LSTM, BatchNormalization
 from Data_preparation import CombineData
 
 
