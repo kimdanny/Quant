@@ -4,11 +4,14 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from pathlib import Path
 import pandas as pd
+from matplotlib import pyplot as plt
 # import multiprocessing
 # print(multiprocessing.cpu_count())  # --> 8
 
 # To import from parent Directories
 # print(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+from matplotlib import rcParams
+
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 from NLP import GCP_Language, Saltlux_Language
@@ -62,6 +65,11 @@ class CombineData:
             self.target_dir_path = os.path.join(root_dir, dirname)
             Path(self.target_dir_path).mkdir(parents=True, exist_ok=True)
             self.file_name = 'from_' + self.from_ + '.csv'
+
+        # Path Handling for plots
+        plot_dirname = self.company_code + '_plots'
+        root_dir = os.path.dirname(__file__)
+        self.plots_dir_path = os.path.join(root_dir, plot_dirname)
 
     # Private Method
     # TODO: Multiprocessing?
@@ -132,8 +140,23 @@ class CombineData:
         # 2. Adding Moving average
         # Reference EDA.ipynb for details and plots
         if moving_avg:
-            merged['Moving_av'] = merged['Close_x'].rolling(window=20, min_periods=0).mean()
-            print("Added derivative: Moving_avg")
+            merged['MA_5'] = merged['Close_x'].rolling(window=5, min_periods=0).mean()
+            print("Added derivative: MA_5")
+
+            merged['MA_20'] = merged['Close_x'].rolling(window=20, min_periods=0).mean()
+            print("Added derivative: MA_20")
+
+            merged['MA_diff'] = merged['MA_5'] - merged['MA_20']
+            print("Added derivative: MA_diff")
+
+            # Plotting Golden Cross
+            Path(self.plots_dir_path).mkdir(parents=True, exist_ok=True)
+            rcParams['figure.figsize'] = 18, 6  # width 18, height 6
+            merged['MA_5'].plot(grid=True, label='MA_5', style='r')
+            merged['MA_20'].plot(grid=True, label='MA_20', style='b')
+            merged['Close_x'].plot(grid=True, style='black')
+            plt.legend()
+            plt.savefig('./' + self.company_code + '_plots/MA_Golden_Cross.png')
 
         return merged
 
