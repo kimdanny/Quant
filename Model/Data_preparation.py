@@ -5,6 +5,7 @@ from dateutil.relativedelta import relativedelta
 from pathlib import Path
 import pandas as pd
 from matplotlib import pyplot as plt
+import numpy as np
 # import multiprocessing
 # print(multiprocessing.cpu_count())  # --> 8
 
@@ -17,6 +18,8 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from NLP import GCP_Language, Saltlux_Language
 from FinanceData import FinanceDataCollection
 from Crawler import Naver_Crawler, Google_Crawler
+
+
 # should I make json or yaml config and read it??
 
 
@@ -48,7 +51,7 @@ class CombineData:
                 print(f'Naver Crawler is set with company code: {self.naver_crawler.company_code}')
                 self.saltlux = Saltlux_Language.Saltlux_Language()
                 print('Saltlux API is set')
-            else:                               # elif self.company_code.isalpha(): --> US Stocks
+            else:  # elif self.company_code.isalpha(): --> US Stocks
                 print("=== US Stock ===")
                 self.google_crawler = Google_Crawler.Google_Crawler(self.company_code)
                 print(f'Google Crawler is set with company code: {self.google_crawler.company_code}')
@@ -73,7 +76,7 @@ class CombineData:
 
     # Private Method
     # TODO: Multiprocessing?
-    def combine_finance_data(self, volume_change=True, moving_avg=True):
+    def combine_finance_data(self, us_currecny=True, volume_change=True, moving_avg=True, fourier=True):
         """
 
         :param volume_change: (Derivative Column) Trading Volume change in Percentage
@@ -102,9 +105,11 @@ class CombineData:
 
         merged = pd.merge(price_df, market_index_df, on='Date').merge(same_sector_close_df, on='Date')
 
-        if self.company_code.isalpha():  # if US Stock, consider currency exchange rate
+        if us_currecny:  # if US Stock or Big companies like SamSung, consider currency exchange rate
             # currency_df --> Date, Open, High, Low, Close, Change
             currency_df = source.get_currency_exchange_data()
+            currency_df = currency_df[['Close']]
+            currency_df = currency_df.rename(columns={'Close': 'usd-krw'})
             merged = pd.merge(merged, currency_df, on='Date')
 
         del source
@@ -113,8 +118,10 @@ class CombineData:
         drop_index = merged[merged['Open_x'] == 0].index
         merged = merged.drop(drop_index)
 
-        """Add new Columns: Derivatives"""
-        # 1. Volume Change of Stock trading and market trading
+        """Adding new Columns: Derivatives"""
+        ########################################################
+        # 1. Volume Change of Stock trading and market trading #
+        ########################################################
         if volume_change:
             i = 1
             vol_change_x = [0]
@@ -122,11 +129,13 @@ class CombineData:
 
             while i < len(merged):
                 try:
-                    vol_change_x.append((merged.iloc[i]['Volume_x'] - merged.iloc[i - 1]['Volume_x']) / merged.iloc[i]['Volume_x'])
+                    vol_change_x.append(
+                        (merged.iloc[i]['Volume_x'] - merged.iloc[i - 1]['Volume_x']) / merged.iloc[i]['Volume_x'])
                 except RuntimeWarning:
                     vol_change_x.append(0.0)
                 try:
-                    vol_change_y.append((merged.iloc[i]['Volume_y'] - merged.iloc[i - 1]['Volume_y']) / merged.iloc[i]['Volume_y'])
+                    vol_change_y.append(
+                        (merged.iloc[i]['Volume_y'] - merged.iloc[i - 1]['Volume_y']) / merged.iloc[i]['Volume_y'])
                 except RuntimeWarning:
                     vol_change_y.append(0.0)
 
@@ -137,8 +146,9 @@ class CombineData:
             merged['vol_change_y'] = vol_change_y
             print("Added derivative: vol_change_y")
 
-        # 2. Adding Moving average
-        # Reference EDA.ipynb for details and plots
+        ########################################
+        # 2. Adding Moving average MA_5, MA_20 #
+        ########################################
         if moving_avg:
             merged['MA_5'] = merged['Close_x'].rolling(window=5, min_periods=0).mean()
             print("Added derivative: MA_5")
@@ -152,11 +162,74 @@ class CombineData:
             # Plotting Golden Cross
             Path(self.plots_dir_path).mkdir(parents=True, exist_ok=True)
             rcParams['figure.figsize'] = 18, 6  # width 18, height 6
-            merged['MA_5'].plot(grid=True, label='MA_5', style='r')
-            merged['MA_20'].plot(grid=True, label='MA_20', style='b')
-            merged['Close_x'].plot(grid=True, style='black')
-            plt.legend()
+            ax = merged[['Close_x', 'MA_5', 'MA_20']].plot()
+
+            # Golden and Dead cross finder
+            merged['Cross'] = "-"  # Cross column placeholder
+
+            prev_key = prev_val = 0
+            for key, val in merged['MA_diff'].iteritems():
+                if val == 0:
+                    continue
+                if val * prev_val < 0:
+                    if val > prev_val:
+                        print(f'golden {key}, {val}')
+                        ax.annotate('Golden', xy=(key, merged['MA_20'][key]), xytext=(10, -30),
+                                    textcoords='offset points', arrowprops=dict(arrowstyle='-|>'))
+
+                        merged['Cross'][key] = 'Golden'
+
+                    elif val < prev_val:
+                        print(f'dead {key}, {val}')
+                        ax.annotate('Dead', xy=(key, merged['MA_20'][key]), xytext=(10, 30),
+                                    textcoords='offset points', arrowprops=dict(arrowstyle='-|>'))
+
+                        merged['Cross'][key] = 'Dead'
+
+                prev_key, prev_val = key, val
+
             plt.savefig('./' + self.company_code + '_plots/MA_Golden_Cross.png')
+
+        ##########################################
+        # 3. Exponential Weighted Moving Average #
+        ##########################################
+        # dataset['ema'] = dataset['price'].ewm(com=0.5).mean()
+        # EWMA_12 = pd.ewm(merged['Close_x'], span=12)
+        # EWMA_26 = pd.ewm(merged['Close_x'], span=26)
+        # merged['MACD'] = (EWMA_12 - EWMA_26)
+
+        ############################
+        # 4. Upper and Lower Bands #
+        ############################
+        # merged['20sd'] = pd.stats.moments.rolling_std(merged['Close_x'], 20)
+        # merged['upper_band'] = merged['MA_20'] + (merged['20sd'] * 2)
+        # merged['lower_band'] = merged['MA_20'] - (merged['20sd'] * 2)
+
+        #############################################
+        # 5. Fourier Transform - 3, 6, 9 components #
+        #############################################
+        # To denoise the series and get trends
+        if fourier:
+            data_FT = merged[['Close_x']]
+            close_fft = np.fft.fft(np.asarray(data_FT['Close_x'].tolist()))
+
+            Path(self.plots_dir_path).mkdir(parents=True, exist_ok=True)
+            plt.figure(figsize=(14, 7), dpi=100)
+            for num_ in [3, 6, 9]:
+                fft_list_m10 = np.copy(close_fft)
+                fft_list_m10[num_:-num_] = 0
+                ft_final = list(map(np.real, (np.fft.ifft(fft_list_m10))))  # Discarding Imaginary parts
+
+                merged[f'FT_{num_}'] = ft_final
+                merged[f'FT_{num_}'].plot()
+
+            data_FT['Close_x'].plot(label='Real', style='b')
+
+            plt.xlabel('Trading Days')
+            plt.ylabel('KRW')
+            plt.title('Close stock prices & Fourier transforms')
+            plt.legend()
+            plt.savefig('./' + self.company_code + '_plots/Fourier_Transforms.png')
 
         return merged
 
@@ -164,7 +237,7 @@ class CombineData:
         merged = None
         return merged
 
-    def combine(self, finance_volume_change=True, finance_moving_avg=True):
+    def combine(self, finance_volume_change=True, finance_moving_avg=True, us_currency=False, fourier=True):
 
         if self._include_language:
             # TODO: combine finance and language
@@ -172,7 +245,18 @@ class CombineData:
             pass
         else:
             # TODO: just call combine_finance_data()
-            combined = self.combine_finance_data(volume_change=finance_volume_change, moving_avg=finance_moving_avg)
+            combined = self.combine_finance_data(volume_change=finance_volume_change, moving_avg=finance_moving_avg,
+                                                 us_currecny=us_currency, fourier=fourier)
+
+        # volume change, MA_diff 가 0인 row는 제거
+        drop_index = combined[combined['vol_change_x'] == 0].index
+        combined = combined.drop(drop_index)
+
+        drop_index = combined[combined['vol_change_y'] == 0].index
+        combined = combined.drop(drop_index)
+
+        drop_index = combined[combined['MA_diff'] == 0].index
+        combined = combined.drop(drop_index)
 
         if self._save_as_csv:
             combined.to_csv(os.path.join(self.target_dir_path, self.file_name))
@@ -181,6 +265,8 @@ class CombineData:
 
 
 combine_data = CombineData('005930', years=3)
-combined_df = combine_data.combine()
+combined_df = combine_data.combine(us_currency=True)
 print(combined_df)
+
+
 

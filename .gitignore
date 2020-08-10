@@ -10,6 +10,7 @@ __pycache__/
 
 # When doing EDA on IPython
 *.ipynb_checkpoints/
+*.ipynb
 
 # For macOS
 .DS_Store

@@ -138,16 +138,18 @@ class FinanceDataCollection:
         return close_prices_df
 
 
-# For Debugging and Testing purpose
+# # For Debugging and Testing purpose
 # if __name__ == '__main__':
-#     data_collection = DataCollection('2019-07')
+#     data_collection = FinanceDataCollection('2019-07')
 #     # stocklist = data_collection.get_stock_list('KOSPI', ['Symbol', 'Name', 'ListingDate'])
-#     stocklist = data_collection.get_stock_list('KOSPI', ['Symbol', 'Name', 'Sector'])
-#     samsung_sameSector_df = data_collection.find_sameSector_companies(stocklist=stocklist, company_code='005930')
-#     samsung_sameSector_comp_close = data_collection.get_close_price_given_companies(samsung_sameSector_df)
+#     # stocklist = data_collection.get_stock_info('KOSPI', ['Symbol', 'Name', 'Sector'])
+#     # samsung_sameSector_df = data_collection.find_sameSector_companies(stocklist=stocklist, company_code='005930')
+#     # samsung_sameSector_comp_close = data_collection.get_close_price_given_companies(samsung_sameSector_df)
 #     # samsung_price = data_collection.get_company_price_data('005930')
 #     # apple_price = data_collection.get_company_price_data('AAPL')
 #     # kospi_index = data_collection.get_index_by_market_data('KS11')
+#     df = data_collection.get_currency_exchange_data()
+#
 #     """
 #     <market index>
 #     Close, Open, High, Low,
@@ -170,4 +172,4 @@ class FinanceDataCollection:
 #     #
 #     # print(currecny)
 #
-#     print(samsung_sameSector_comp_close)
+#     print(df.columns)
