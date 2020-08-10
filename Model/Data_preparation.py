@@ -4,14 +4,13 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from pathlib import Path
 import pandas as pd
+from matplotlib import rcParams
 from matplotlib import pyplot as plt
 import numpy as np
-# import multiprocessing
-# print(multiprocessing.cpu_count())  # --> 8
-
-# To import from parent Directories
-# print(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from matplotlib import rcParams
+from statsmodels.tsa.arima_model import ARIMA
+from pandas.plotting import autocorrelation_plot
+from sklearn.metrics import mean_squared_error
+from math import sqrt
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
@@ -90,6 +89,8 @@ class CombineData:
 
         # market_index_df --> Date, Open, High, Low, Close, Volume, Change
         market_index_df = source.get_index_by_market_data('KS200')
+        # TODO: should I just remove Open, High and Low ??
+        # market_index_df = market_index_df[['Date', 'Close', 'Volume', 'Change']]
 
         """
         stock_info --> Symbol, Market, Name, Sector, Industry, ListingDate, SettleMonth,
@@ -165,7 +166,7 @@ class CombineData:
             ax = merged[['Close_x', 'MA_5', 'MA_20']].plot()
 
             # Golden and Dead cross finder
-            merged['Cross'] = "-"  # Cross column placeholder
+            merged['Cross'] = 0.0  # Cross column placeholder
 
             prev_key = prev_val = 0
             for key, val in merged['MA_diff'].iteritems():
@@ -177,14 +178,14 @@ class CombineData:
                         ax.annotate('Golden', xy=(key, merged['MA_20'][key]), xytext=(10, -30),
                                     textcoords='offset points', arrowprops=dict(arrowstyle='-|>'))
 
-                        merged['Cross'][key] = 'Golden'
+                        merged.at[key, 'Cross'] = 1.0  # Encode Golden as 1
 
                     elif val < prev_val:
                         print(f'dead {key}, {val}')
                         ax.annotate('Dead', xy=(key, merged['MA_20'][key]), xytext=(10, 30),
                                     textcoords='offset points', arrowprops=dict(arrowstyle='-|>'))
 
-                        merged['Cross'][key] = 'Dead'
+                        merged.at[key, 'Cross'] = -1.0  # Encode Dead as -1
 
                 prev_key, prev_val = key, val
 
@@ -208,7 +209,7 @@ class CombineData:
         #############################################
         # 5. Fourier Transform - 3, 6, 9 components #
         #############################################
-        # To denoise the series and get trends
+        # To Denoise the series and get trends
         if fourier:
             data_FT = merged[['Close_x']]
             close_fft = np.fft.fft(np.asarray(data_FT['Close_x'].tolist()))
@@ -231,13 +232,53 @@ class CombineData:
             plt.legend()
             plt.savefig('./' + self.company_code + '_plots/Fourier_Transforms.png')
 
+        #######################################################
+        # 6. ARIMA (Auto Regression Integrated Moving Average #
+        #######################################################
+        # Target: Close Price
+        # close_series = merged['Close_x']
+        # model = ARIMA(close_series, order=(5, 1, 0))
+        # model_fit = model.fit(disp=0)
+        # print(model_fit.summary())
+        #
+        # autocorrelation_plot(close_series)
+        # plt.figure(figsize=(10, 7), dpi=80)
+        # plt.show()
+        #
+        # X = close_series.values
+        # size = int(len(X) * 0.66)
+        # train, test = X[0:size], X[size:len(X)]
+        # history = [x for x in train]
+        # predictions = list()
+        # for t in range(len(test)):
+        #     model = ARIMA(history, order=(5, 1, 0))
+        #     model_fit = model.fit(disp=0)
+        #     output = model_fit.forecast()
+        #     yhat = output[0]
+        #     predictions.append(yhat)
+        #     obs = test[t]
+        #     history.append(obs)
+        #
+        # error = mean_squared_error(test, predictions)
+        # print('Test RMSE: %.3f' % sqrt(error))
+        #
+        # plt.figure(figsize=(12, 6), dpi=100)
+        # plt.plot(test, label='Real')
+        # plt.plot(predictions, color='red', label='Predicted')
+        # plt.xlabel('Days')
+        # plt.ylabel('KRW')
+        # plt.title('Figure 5: ARIMA model on Samsung stock')
+        # plt.legend()
+        # plt.show()
+
+
         return merged
 
     def combine_language_data(self):
         merged = None
         return merged
 
-    def combine(self, finance_volume_change=True, finance_moving_avg=True, us_currency=False, fourier=True):
+    def combine(self, volume_change=True, moving_avg=True, us_currency=False, fourier=True):
 
         if self._include_language:
             # TODO: combine finance and language
@@ -245,7 +286,7 @@ class CombineData:
             pass
         else:
             # TODO: just call combine_finance_data()
-            combined = self.combine_finance_data(volume_change=finance_volume_change, moving_avg=finance_moving_avg,
+            combined = self.combine_finance_data(volume_change=volume_change, moving_avg=moving_avg,
                                                  us_currecny=us_currency, fourier=fourier)
 
         # volume change, MA_diff 가 0인 row는 제거
@@ -264,6 +305,7 @@ class CombineData:
         return combined
 
 
+# main
 combine_data = CombineData('005930', years=3)
 combined_df = combine_data.combine(us_currency=True)
 print(combined_df)
