@@ -155,9 +155,9 @@ class MultivariateLSTM:
 
     def run(self, load_saved_model=True, plot_history=True, plot_indiv=True, plot_allinone=True):
         train, validation, test = self.train_val_test_split(self.data)
-        print(train.shape)
-        print(validation.shape)
-        print(test.shape)
+        print("train shape: ", train.shape)
+        print("vali shape: ", validation.shape)
+        print("test shape: ", test.shape)
 
         _, _, train_scaled, train_target_scaled = self.split_target(train)
         train_X, train_y = self.split_X_y(train_scaled, train_target_scaled)
@@ -170,9 +170,12 @@ class MultivariateLSTM:
 
         del _
 
-        print(train_X.shape, train_y.shape)
-        print(vali_X.shape, vali_y.shape)
-        print(test_X.shape, test_y.shape)
+        print("train_X, train_y shape: ", train_X.shape, train_y.shape)
+        print("vali_X, vali_y shape: ", vali_X.shape, vali_y.shape)
+        print("test_X, test_y shape: ", test_X.shape, test_y.shape)
+
+        import sys
+        sys.exit(0)
 
         if not load_saved_model:
             my_model = self.model(input_shape=(train_X.shape[1], train_X.shape[2]))
@@ -210,6 +213,7 @@ class MultivariateLSTM:
 
 
 if __name__ == '__main__':
-    path = './005930_final_data/from_2017-08-04.csv'
+    path = './005930_final_data/from_2017-08-10.csv'
     multi_lstm = MultivariateLSTM(data_path=path)
     multi_lstm.run(load_saved_model=False)
+
