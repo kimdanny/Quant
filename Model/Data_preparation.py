@@ -1,12 +1,14 @@
 import sys
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from pathlib import Path
 import pandas as pd
+from pandas._libs.tslibs.timestamps import Timestamp
+import numpy as np
 from matplotlib import rcParams
 from matplotlib import pyplot as plt
-import numpy as np
+from sklearn.preprocessing import LabelEncoder
 from statsmodels.tsa.arima_model import ARIMA
 from pandas.plotting import autocorrelation_plot
 from sklearn.metrics import mean_squared_error
@@ -82,7 +84,7 @@ class CombineData:
         :param moving_avg:    (Derivative Column) Moving Average with window size 20 days
         :return: combined data
         """
-        source = self.finance_data
+        source = self.finance_data  # for better computability
 
         # price_df --> Date, Open, High, Low, Close, Volume, Change
         price_df = source.get_company_price_data(self.company_code)
@@ -115,7 +117,7 @@ class CombineData:
 
         del source
 
-        # 액면분할시 생기는 0값들 있는 row drop
+        # 액면분할 (Forward Split) 시 생기는 0값들 있는 row drop
         drop_index = merged[merged['Open_x'] == 0].index
         merged = merged.drop(drop_index)
 
@@ -216,7 +218,7 @@ class CombineData:
 
             Path(self.plots_dir_path).mkdir(parents=True, exist_ok=True)
             plt.figure(figsize=(14, 7), dpi=100)
-            for num_ in [3, 6, 9]:
+            for num_ in [9, 50]:
                 fft_list_m10 = np.copy(close_fft)
                 fft_list_m10[num_:-num_] = 0
                 ft_final = list(map(np.real, (np.fft.ifft(fft_list_m10))))  # Discarding Imaginary parts
@@ -275,19 +277,106 @@ class CombineData:
         return merged
 
     def combine_language_data(self):
-        merged = None
-        return merged
+
+        # source = self.finance_data
+        # read csv before deployment
+        # news = self.naver_crawler.crawl_news()
+        # research = self.naver_crawler.crawl_research()
+        news = pd.read_csv('../Crawler/crawled_result/005930/News/fullPage/pages1-2.csv')
+        research = pd.read_csv('../Crawler/crawled_result/005930/Research/fullPage/pages1-25.csv')
+
+        # not needed when getting object directly from Crawler
+        news = news.drop('Unnamed: 0', axis=1)
+        research = research.drop('Unnamed: 0', axis=1)
+
+        news = news[['Date', 'Title', 'Body']]
+        research = research[['Date', 'Title', 'Body', 'Goal_Price', 'Opinion', 'Views']]
+        research['Date'] = '20' + research['Date']
+
+        # convert to Timestamp object
+        news['Date'] = pd.to_datetime(news['Date'])
+        research['Date'] = pd.to_datetime(research['Date'])
+
+        ##########
+        #  NEWS  #
+        ##########
+        def today_or_next_day(time):
+            """
+            return True if today's news, False if next day's news
+            """
+            today_close_time = Timestamp(time.date()) + timedelta(hours=15, minutes=30)
+
+            return time <= today_close_time
+
+        # Initialize which_date column
+        news['which_date'] = 0
+
+        # Fill in which_date column
+        for i, timestamp in enumerate(news['Date']):
+            if today_or_next_day(timestamp):
+                news.at[i, 'which_date'] = Timestamp(timestamp.date())
+            else:
+                news.at[i, 'which_date'] = Timestamp(timestamp.date()) + timedelta(days=1)
+
+        news = news[['which_date', 'Title', 'Body']]
+        news.columns = ['Date', 'Title', 'Body']
+
+        def concat_series_by_date(data, column):
+            """
+            concat all the values in specified column, splitted by date
+            :param column: target column name
+            :return: list of concatenated values
+            """
+            finals = []
+
+            for date in data['Date'].unique():
+                temp_log = " "
+                values = data[data['Date'] == date][column].values
+                temp_log = temp_log.join(values)
+
+                finals.append(temp_log)
+
+            return finals
+
+        news_title_grouped = concat_series_by_date(column='Title')
+        news_body_grouped = concat_series_by_date(column='Body')
+
+        news_grouped = pd.DataFrame({
+            'Date': news['Date'].unique(),
+            'Title': news_title_grouped,
+            'Body': news_body_grouped,
+            'Sentiment': np.nan,
+            'Polarity': np.nan
+        })
+
+        print(news_grouped)
+
+        # USE API to get scores
+        # for i, title in enumerate(grouped['Title']):
+        #     sentiment_result = self.saltlux.request_sentiment(text_content=title, dump=True)
+        #     polarity, score, _ = self.saltlux.parse_sentiment_json(sentiment_json=sentiment_result)
+        #     grouped.at[i, 'Sentiment'] = score
+        #     grouped.at[i, 'Polarity'] = polarity
+
+
+        ############
+        # Research #
+        ############
+
+        # Opinion Encoding
+        research['Opinion'] = LabelEncoder.fit_transform(research['Opinion'])
+
+        research_title_grouped = concat_series_by_date(data=research, column='Title')
+        research_body_grouped = concat_series_by_date(data=research, column='Body')
+
+
+
+        return None
 
     def combine(self, volume_change=True, moving_avg=True, us_currency=False, fourier=True):
 
-        if self._include_language:
-            # TODO: combine finance and language
-            combined = None
-            pass
-        else:
-            # TODO: just call combine_finance_data()
-            combined = self.combine_finance_data(volume_change=volume_change, moving_avg=moving_avg,
-                                                 us_currecny=us_currency, fourier=fourier)
+        combined = self.combine_finance_data(volume_change=volume_change, moving_avg=moving_avg,
+                                             us_currecny=us_currency, fourier=fourier)
 
         # volume change, MA_diff 가 0인 row는 제거
         drop_index = combined[combined['vol_change_x'] == 0].index
@@ -299,6 +388,11 @@ class CombineData:
         drop_index = combined[combined['MA_diff'] == 0].index
         combined = combined.drop(drop_index)
 
+        if self._include_language:
+            # TODO: combine finance and language
+            combined = None
+            pass
+
         if self._save_as_csv:
             combined.to_csv(os.path.join(self.target_dir_path, self.file_name))
 
@@ -308,7 +402,7 @@ class CombineData:
 # main
 combine_data = CombineData('005930', years=3)
 combined_df = combine_data.combine(us_currency=True)
-print(combined_df)
-
+# print(combined_df)
+# combine_data.combine_language_data()
 
 

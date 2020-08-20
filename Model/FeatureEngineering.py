@@ -7,7 +7,7 @@ from pandas import read_csv
 from matplotlib import pyplot as plt
 from xgboost import XGBRegressor
 
-path = './005930_final_data/from_2017-08-10.csv'
+path = './005930_final_data/from_2017-08-19.csv'
 data = read_csv(path)
 
 print('Total dataset has {} samples, and {} features.'.format(data.shape[0], data.shape[1]))

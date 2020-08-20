@@ -174,6 +174,7 @@ class MultivariateLSTM:
         print("vali_X, vali_y shape: ", vali_X.shape, vali_y.shape)
         print("test_X, test_y shape: ", test_X.shape, test_y.shape)
 
+        # TODO
         import sys
         sys.exit(0)
 
