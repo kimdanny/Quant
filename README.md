@@ -46,7 +46,7 @@ Below illustrates the file structure after every auto-generated file and folder 
 |
 +-- NLP
 |   +-- __init__.py
-|   +-- config.py
+|   +-- config.py  (credentials, thus gitignored)
 |   +-- GCP_Language.py
 |   +-- Saltlux_Language.py
 |   +-- entities[id].json
@@ -68,7 +68,7 @@ will be updated
 **Samsung Golden and Dead Cross based on Moving Average**  
 ![Samsung_Golden_Dead_Cross](Model/005930_plots/MA_Golden_Cross.png)
 
-**Fourier Transforms on Samsung stock price**  
+**Fourier Transforms on Samsung stock price for Denoising**  
 ![Samsung_4_stock_prices](Model/005930_plots/Fourier_Transforms.png)
 
 **Feature Importance Test**  

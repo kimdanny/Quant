@@ -62,6 +62,8 @@ class CombineData:
         self.finance_data = FinanceDataCollection.FinanceDataCollection(self.from_)
         print(f'FinanceDataCollection Class is set from date: {self.finance_data.from_}')
 
+        self.encoder = LabelEncoder()
+
         if self._save_as_csv:
             # Path Handling
             dirname = self.company_code + '_final_data'
@@ -273,7 +275,6 @@ class CombineData:
         # plt.legend()
         # plt.show()
 
-
         return merged
 
     def combine_language_data(self):
@@ -338,8 +339,8 @@ class CombineData:
 
             return finals
 
-        news_title_grouped = concat_series_by_date(column='Title')
-        news_body_grouped = concat_series_by_date(column='Body')
+        news_title_grouped = concat_series_by_date(data=news, column='Title')
+        news_body_grouped = concat_series_by_date(data=news, column='Body')
 
         news_grouped = pd.DataFrame({
             'Date': news['Date'].unique(),
@@ -350,26 +351,60 @@ class CombineData:
         })
 
         print(news_grouped)
+        print("==========\n")
 
         # USE API to get scores
-        # for i, title in enumerate(grouped['Title']):
+        # for i, title in enumerate(news_grouped['Title']):
         #     sentiment_result = self.saltlux.request_sentiment(text_content=title, dump=True)
+        # polarity and score are mean value of many
         #     polarity, score, _ = self.saltlux.parse_sentiment_json(sentiment_json=sentiment_result)
-        #     grouped.at[i, 'Sentiment'] = score
-        #     grouped.at[i, 'Polarity'] = polarity
-
+        #     news_grouped.at[i, 'Sentiment'] = score
+        #     news_grouped.at[i, 'Polarity'] = polarity
 
         ############
         # Research #
         ############
 
         # Opinion Encoding
-        research['Opinion'] = LabelEncoder.fit_transform(research['Opinion'])
+        # Replace 'BUY', 'StrongBUY' with '매수', '강력매수'
+        research['Opinion'] = research['Opinion'].replace(to_replace=['Buy'], value='매수')
+        research['Opinion'] = research['Opinion'].replace(to_replace=['StrongBuy'], value='강력매수')
 
+        opinons = research['Opinion'].values
+        self.encoder.fit(opinons)
+        opinion_encoded = self.encoder.transform(opinons)
+        research['Opinion'] = opinion_encoded
+
+        # research grouping
         research_title_grouped = concat_series_by_date(data=research, column='Title')
         research_body_grouped = concat_series_by_date(data=research, column='Body')
 
+        # Contains only numeric values
+        research_data_numeric = research[['Date', 'Goal_Price', 'Opinion', 'Views']]
+        research_goal_price_grouped = research_data_numeric[['Date', 'Goal_Price']].groupby('Date') \
+                                          .mean()['Goal_Price'].values[::-1]
+        research_opinion_grouped = research_data_numeric[['Date', 'Opinion']].groupby('Date') \
+                                          .mean()['Opinion'].values[::-1]
+        research_views_grouped = research_data_numeric[['Date', 'Views']].groupby('Date') \
+                                          .mean()['Views'].values[::-1]
 
+        del research_data_numeric
+
+        assert (
+                len(research_title_grouped) == len(research_body_grouped) == len(research_goal_price_grouped)
+                == len(research_opinion_grouped) == len(research_views_grouped)
+        )
+
+        research_grouped = pd.DataFrame({
+            'Date': research['Date'].unique(),
+            'Title': research_title_grouped,
+            'Body': research_body_grouped,
+            'Goal_Price': research_goal_price_grouped,
+            'Opinion': research_opinion_grouped,
+            'Views': research_views_grouped
+        })
+
+        print(research_grouped)
 
         return None
 
@@ -401,8 +436,6 @@ class CombineData:
 
 # main
 combine_data = CombineData('005930', years=3)
-combined_df = combine_data.combine(us_currency=True)
+# combined_df = combine_data.combine(us_currency=True)
 # print(combined_df)
-# combine_data.combine_language_data()
-
-
+combine_data.combine_language_data()
