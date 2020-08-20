@@ -80,10 +80,6 @@ will be updated
 **Facebook Prophet's prediction on ARKQ ETF**  
 ![Samsung_4_stock_prices](Model/ARKQ_plots/prophet_pred.png)
 
-**Facebook Prophet's prediction on Samsung Close price**  
-![Samsung_4_stock_prices](Model/005930_plots/prophet_pred.png)
-
-
 
 
 
