@@ -25,7 +25,7 @@ class Naver_Crawler:
         self.company_dir_path = os.path.join(base_dir, self.company_code)
         # print(self.company_dir_path)
 
-    def crawl_news(self, maxpage: int, page_to_csv=True, full_pages_to_csv=True):
+    def crawl_news(self, maxpage=None, page_to_csv=False, full_pages_to_csv=True):
         """
         Example URL:
             https://finance.naver.com/item/news.nhn?code=095570&page=2&sm=entity_id.basic
@@ -46,7 +46,17 @@ class Naver_Crawler:
         firstpage = page
         last_read_page = None
 
-        # assert type(maxpage) == int
+        # Get Last page number
+        url = self.base_url + '/item/news_news.nhn?code=' + self.company_code
+        page_nav = BeautifulSoup(requests.get(url).text, 'html.parser').select('.pgRR')[0]
+        last_page = page_nav.find('a')['href']
+        match = re.search(r'page=', last_page)
+        last_page = int(last_page[match.end():])
+        del match
+
+        maxpage = last_page if maxpage is None else maxpage
+
+        assert type(maxpage) == int and maxpage <= last_page
 
         result_df = None
 
@@ -99,46 +109,46 @@ class Naver_Crawler:
                 article_html = BeautifulSoup(article_html_text, "html.parser")
 
                 body = article_html.find('div', id='news_read')
-                body = body.text  # type --> sting
+                body = body.text  # type --> string
                 body = body.replace("\n", "").replace("\t", "")
                 # TODO: Reminder! body 내 특수문자 다 없애기 -> 모델에 넣을떄 하자
                 article_body_result.append(body)
 
                 # 6. TODO: ==Reaction==
-                reaction_space = article_html.find('ul', class_='u_likeit_layer _faceLayer')
-
-                good_reaction_count = int(reaction_space.find('li', class_='u_likeit_list good') \
-                                          .find('span', class_='u_likeit_list_count _count').text)
-
-                warm_reaction_count = int(reaction_space.find('li', class_='u_likeit_list warm') \
-                                          .find('span', class_='u_likeit_list_count _count').text)
-
-                sad_reaction_count = int(reaction_space.find('li', class_='u_likeit_list sad') \
-                                         .find('span', class_='u_likeit_list_count _count').text)
-
-                angry_reaction_count = int(reaction_space.find('li', class_='u_likeit_list angry') \
-                                           .find('span', class_='u_likeit_list_count _count').text)
-
-                want_reaction_count = int(reaction_space.find('li', class_='u_likeit_list want') \
-                                          .find('span', class_='u_likeit_list_count _count').text)
+                # reaction_space = article_html.find('ul', class_='u_likeit_layer _faceLayer')
+                #
+                # good_reaction_count = int(reaction_space.find('li', class_='u_likeit_list good') \
+                #                           .find('span', class_='u_likeit_list_count _count').text)
+                #
+                # warm_reaction_count = int(reaction_space.find('li', class_='u_likeit_list warm') \
+                #                           .find('span', class_='u_likeit_list_count _count').text)
+                #
+                # sad_reaction_count = int(reaction_space.find('li', class_='u_likeit_list sad') \
+                #                          .find('span', class_='u_likeit_list_count _count').text)
+                #
+                # angry_reaction_count = int(reaction_space.find('li', class_='u_likeit_list angry') \
+                #                            .find('span', class_='u_likeit_list_count _count').text)
+                #
+                # want_reaction_count = int(reaction_space.find('li', class_='u_likeit_list want') \
+                #                           .find('span', class_='u_likeit_list_count _count').text)
 
                 # print(reaction_space)
                 # print("="*20)
 
                 # 7. TODO: ==Commentary==
-                comments = article_html.find_all(
-                    lambda tag: tag.name == 'span' and tag.get('class') == 'u_cbox_contents')
+                # comments = article_html.find_all(
+                #     lambda tag: tag.name == 'span' and tag.get('class') == 'u_cbox_contents')
                 # print(comments)
 
             # To Dataframe and To CSV (optional)
             page_result = {
                 "Date": date_result, "Source": source_result, "Title": title_result,
                 "Link": link_result, "Body": article_body_result,
-                "good_count": good_reaction_count,
-                "warm_count": warm_reaction_count,
-                "sad_count": sad_reaction_count,
-                "angry_count": angry_reaction_count,
-                "want_count": want_reaction_count
+                # "good_count": good_reaction_count,
+                # "warm_count": warm_reaction_count,
+                # "sad_count": sad_reaction_count,
+                # "angry_count": angry_reaction_count,
+                # "want_count": want_reaction_count
             }
 
             page_df = pd.DataFrame(page_result)
@@ -157,11 +167,11 @@ class Naver_Crawler:
 
         if full_pages_to_csv:
             result_df.to_csv(os.path.join(fullPage_dir_path, 'pages' + str(firstpage) + '-' + str(last_read_page) + '.csv'),
-                mode='w', encoding='utf-8-sig')  # 한글 깨짐 방지 인코딩
+                             mode='w', encoding='utf-8-sig')  # 한글 깨짐 방지 인코딩
 
         return result_df
 
-    def crawl_research(self, maxpage=None, page_to_csv=True, full_pages_to_csv=True):
+    def crawl_research(self, maxpage=None, page_to_csv=False, full_pages_to_csv=True):
         """
         Example URL:
             https://finance.naver.com/research/company_list.nhn?keyword=&searchType=itemCode&itemCode=105560&page=1
@@ -197,6 +207,8 @@ class Naver_Crawler:
         result_df = None
 
         while page <= maxpage:
+            print(f'Current Research page: {page}')
+
             url = self.base_url + '/research/company_list.nhn?keyword=&searchType=itemCode&itemCode=' \
                   + self.company_code + '&page=' + str(page)
 
@@ -266,21 +278,19 @@ class Naver_Crawler:
 
 
 # if __name__ == '__main__':
-#     # 종목 코드로 기사 크롤링 --> 종목코드는 FinancialDataReader에서 받아온다.
-#
-#     # sample code --> { '005930': '삼성전자',
-#     #                   '005380': '현대차',
-#     #                   '015760': '한국전력',
-#     #                   '005490': 'POSCO',
-#     #                   '105560': 'KB금융'
-#     #                   '95570' : 'AJ네트웍스'}
-#
-#     naver_crawler = Naver_Crawler('005380')
-#     # news_df = naver_crawler.crawl_news(maxpage=2)
-#     # print(sample_df)
-#
-#     # research = naver_crawler.crawl_research(2)
-#     # print(research)
-#
-#     # discussion = naver_crawler.crawl_discussion(1)
-#     # print(discussion)
+    # 종목 코드로 기사 크롤링 --> 종목코드는 FinancialDataReader에서 받아온다.
+
+    # sample code --> { '005930': '삼성전자',
+    #                   '005380': '현대차',
+    #                   '015760': '한국전력',
+    #                   '005490': 'POSCO',
+    #                   '105560': 'KB금융'
+    #                   '95570' : 'AJ네트웍스'}
+
+    # naver_crawler = Naver_Crawler('005930')
+    # research = naver_crawler.crawl_research()
+    # news_df = naver_crawler.crawl_news()
+
+
+
+
