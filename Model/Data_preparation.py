@@ -135,12 +135,14 @@ class CombineData:
             while i < len(merged):
                 try:
                     vol_change_x.append(
-                        (merged.iloc[i]['Volume_x'] - merged.iloc[i - 1]['Volume_x']) / merged.iloc[i]['Volume_x'])
+                        (merged.iloc[i]['Volume_x'] - merged.iloc[i - 1]['Volume_x']) / merged.iloc[i]['Volume_x']
+                    )
                 except RuntimeWarning:
                     vol_change_x.append(0.0)
                 try:
                     vol_change_y.append(
-                        (merged.iloc[i]['Volume_y'] - merged.iloc[i - 1]['Volume_y']) / merged.iloc[i]['Volume_y'])
+                        (merged.iloc[i]['Volume_y'] - merged.iloc[i - 1]['Volume_y']) / merged.iloc[i]['Volume_y']
+                    )
                 except RuntimeWarning:
                     vol_change_y.append(0.0)
 
@@ -151,9 +153,9 @@ class CombineData:
             merged['vol_change_y'] = vol_change_y
             print("Added derivative: vol_change_y")
 
-        ########################################
-        # 2. Adding Moving average MA_5, MA_20 #
-        ########################################
+        ###################################################################
+        # 2. Adding Moving average MA_5, MA_20, MA_diff, G_cross, D_cross #
+        ###################################################################
         if moving_avg:
             merged['MA_5'] = merged['Close_x'].rolling(window=5, min_periods=0).mean()
             print("Added derivative: MA_5")
@@ -298,6 +300,9 @@ class CombineData:
         news['Date'] = pd.to_datetime(news['Date'])
         research['Date'] = pd.to_datetime(research['Date'])
 
+        # TODO: 뉴스와 리서치를 처리하기 전에 애초에 self.from_에서 데이터프레임의 밑단을 잘라버리자
+        # 더 좋은 방법은: 날짜를 파라미터로 받아서 크롤링해오자...
+
         ##########
         #  NEWS  #
         ##########
@@ -342,19 +347,28 @@ class CombineData:
         news_title_grouped = concat_series_by_date(data=news, column='Title')
         news_body_grouped = concat_series_by_date(data=news, column='Body')
 
-        news_grouped = pd.DataFrame({
+        news_grouped_temp = pd.DataFrame({
             'Date': news['Date'].unique(),
             'Title': news_title_grouped,
-            'Body': news_body_grouped,
+            'Body': news_body_grouped
+        })
+
+        news_grouped = pd.DataFrame({
+            'Date': news['Date'].unique(),
+            'Language': "-",
             'Sentiment': np.nan,
             'Polarity': np.nan
         })
 
-        print(news_grouped)
-        print("==========\n")
+        for i, row in news_grouped_temp.iterrows():
+            news_grouped.at[i, "Language"] = row.Title + row.Body
 
-        # USE API to get scores
-        # for i, title in enumerate(news_grouped['Title']):
+        del news_grouped_temp
+
+        print("news grouped: ", news_grouped)
+
+        # # USE API to get scores
+        # for i, title in enumerate(news_grouped['Language']):
         #     sentiment_result = self.saltlux.request_sentiment(text_content=title, dump=True)
         # polarity and score are mean value of many
         #     polarity, score, _ = self.saltlux.parse_sentiment_json(sentiment_json=sentiment_result)
@@ -395,16 +409,43 @@ class CombineData:
                 == len(research_opinion_grouped) == len(research_views_grouped)
         )
 
-        research_grouped = pd.DataFrame({
+        research_grouped_temp = pd.DataFrame({
             'Date': research['Date'].unique(),
             'Title': research_title_grouped,
-            'Body': research_body_grouped,
-            'Goal_Price': research_goal_price_grouped,
-            'Opinion': research_opinion_grouped,
-            'Views': research_views_grouped
+            'Body': research_body_grouped
         })
 
-        print(research_grouped)
+        research_grouped = pd.DataFrame({
+            'Date': research['Date'].unique(),
+            'Language': "-",
+            'Goal_Price': research_goal_price_grouped,
+            'Opinion': research_opinion_grouped,
+            'Views': research_views_grouped,
+            'Sentiment': np.nan,
+            'Polarity': np.nan
+        })
+
+        # Combine title and body into one 'language' column
+        for i, row in research_grouped_temp.iterrows():
+            research_grouped.at[i, "Language"] = row.Title + row.Body
+
+        del research_grouped_temp
+        print("research grouped", research_grouped)
+
+        # # Use API to get scores of the Language
+        # # Not trying to use API many times
+        # for i, lang in enumerate(research_grouped['Language']):
+        #     sentiment_result = self.saltlux.request_sentiment(text_content=lang, dump=True, dump_id="Research")
+        #     polarity, score, _ = self.saltlux.parse_sentiment_json(
+        #         sentiment_json=sentiment_result)  # polarity and score are mean value of many
+        #     research_grouped.at[i, 'Sentiment'] = score
+        #     research_grouped.at[i, 'Polarity'] = polarity
+
+        ###################
+        # News + Research #
+        ###################
+
+
 
         return None
 
