@@ -5,9 +5,11 @@ import pandas as pd
 import os
 from pathlib import Path
 import numpy as np
+import asyncio
+import aiohttp
 
 # TODO: crawl by dates range ex) crawl news from when to when
-# TODO: Use multiprocessing to speed up crawler
+# TODO: Use asyncio to speed up crawler
 
 
 class Naver_Crawler:
@@ -25,10 +27,23 @@ class Naver_Crawler:
         self.company_dir_path = os.path.join(base_dir, self.company_code)
         # print(self.company_dir_path)
 
+    @staticmethod
+    async def fetch(session, url):
+        async with session.get(url) as response:
+            return await response.text()
+
+    async def crawl_price_history(self, maxpage):
+        async with aiohttp.ClientSession() as session:
+            url = 'https://finance.naver.com/item/sise_day.nhn?code={code}&page={page}'
+            futures = [asyncio.ensure_future(self.fetch(session, url.format(code='005930', page=i)))
+                       for i in range(1, maxpage)]
+            res = await asyncio.gather(*futures)
+            return res
+
     def crawl_news(self, maxpage=None, page_to_csv=False, full_pages_to_csv=True):
         """
         Example URL:
-            https://finance.naver.com/item/news.nhn?code=095570&page=2&sm=entity_id.basic
+            https://finance.naver.com/item/news.nhn?code=095570&page=2
 
         :param maxpage:  (int or None) Crawl to `maxpage`page
         :param page_to_csv: (Bool)  Set True if you want csv for separate pages, otherwise False
@@ -61,23 +76,12 @@ class Naver_Crawler:
         result_df = None
 
         while page <= maxpage:
+            print(f'News Current page: {page}')
 
             url = self.base_url + '/item/news_news.nhn?code=' + self.company_code + '&page=' + str(page)
 
             html_text = requests.get(url).text
             html = BeautifulSoup(html_text, "html.parser")
-
-            # TODO: Try getting the last_page as I did from below
-            # Possible future Error Handling: maxpage Error -> Currently handled by Naver themself
-            # 실제 웹에는 5페이지까지 밖에 없는데 maxpage를 10으로 설정한 경우 5페이지에서 loop break 시킴
-            try:
-                print(f'News Current page: {page}')
-                last_read_page = page
-                current_page_on_html = html.select('.on')[1].text.replace("\n", "").replace("\t", "")
-            except IndexError:
-                current_page_on_html = page
-            if current_page_on_html != str(page):
-                break
 
             # 1. ==Date==
             dates = html.select('.date')
@@ -109,6 +113,7 @@ class Naver_Crawler:
                 article_html = BeautifulSoup(article_html_text, "html.parser")
 
                 body = article_html.find('div', id='news_read')
+                # print(body)
                 body = body.text  # type --> string
                 body = body.replace("\n", "").replace("\t", "")
                 # TODO: Reminder! body 내 특수문자 다 없애기 -> 모델에 넣을떄 하자
@@ -266,7 +271,7 @@ class Naver_Crawler:
             if page_to_csv:
                 page_df.to_csv(os.path.join(research_dir_path, 'page' + str(page) + '.csv'),
                                mode='w', encoding='utf-8-sig')  # 한글 깨짐 방지 인코딩
-
+            'https://finance.naver.com/item/sise_day.nhn?code={code}&page={page}'
             last_read_page = page
             page += 1
 
@@ -277,7 +282,7 @@ class Naver_Crawler:
         return result_df
 
 
-# if __name__ == '__main__':
+if __name__ == '__main__':
     # 종목 코드로 기사 크롤링 --> 종목코드는 FinancialDataReader에서 받아온다.
 
     # sample code --> { '005930': '삼성전자',
@@ -287,9 +292,9 @@ class Naver_Crawler:
     #                   '105560': 'KB금융'
     #                   '95570' : 'AJ네트웍스'}
 
-    # naver_crawler = Naver_Crawler('005930')
+    naver_crawler = Naver_Crawler('005930')
     # research = naver_crawler.crawl_research()
-    # news_df = naver_crawler.crawl_news()
+    news_df = naver_crawler.crawl_news(maxpage=100)
 
 
 
