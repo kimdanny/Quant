@@ -35,7 +35,7 @@ class Naver_Crawler:
     async def crawl_price_history(self, maxpage):
         async with aiohttp.ClientSession() as session:
             url = 'https://finance.naver.com/item/sise_day.nhn?code={code}&page={page}'
-            futures = [asyncio.ensure_future(self.fetch(session, url.format(code='005930', page=i)))
+            futures = [asyncio.ensure_future(self.fetch(session, url.format(code=self.company_code, page=i)))
                        for i in range(1, maxpage)]
             res = await asyncio.gather(*futures)
             return res

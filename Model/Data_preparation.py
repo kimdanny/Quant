@@ -308,13 +308,13 @@ class CombineData:
         ##########
         def today_or_next_day(time):
             """
-            return True if today's news, False if next day's news
+            return True if today's news, False otherwise
             """
             today_close_time = Timestamp(time.date()) + timedelta(hours=15, minutes=30)
 
             return time <= today_close_time
 
-        # Initialize which_date column
+        # Initialize 'which_date' column
         news['which_date'] = 0
 
         # Fill in which_date column
