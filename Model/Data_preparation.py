@@ -385,7 +385,7 @@ class CombineData:
         research['Opinion'] = research['Opinion'].replace(to_replace=['StrongBuy'], value='강력매수')
 
         opinons = research['Opinion'].values
-        self.encoder.fit(opinons)
+        self.encoder.fit(opinons)      # LabelEncoder
         opinion_encoded = self.encoder.transform(opinons)
         research['Opinion'] = opinion_encoded
 
